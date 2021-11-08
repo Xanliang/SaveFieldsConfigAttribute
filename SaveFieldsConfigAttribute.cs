@@ -1,19 +1,19 @@
   /// <summary>
-    /// FormÖµÀàĞÍ¿Ø¼ş±ê¼Ç×Ö¶ÎÊÇ·ñ¿ÉÒÔ±»´æ´¢
+    /// Formå€¼ç±»å‹æ§ä»¶æ ‡è®°å­—æ®µæ˜¯å¦å¯ä»¥è¢«å­˜å‚¨
     /// </summary>
 
     [AttributeUsage(AttributeTargets.Field)]
     public class SaveFieldsConfigAttribute : Attribute
     {
         /// <summary>
-        /// ÊôĞÔÃû³Æ 
+        /// å±æ€§åç§° 
         /// </summary>
         public string PropertyName { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="PropertyName">ÊôĞÔÃû³Æ</param>
+        /// <param name="PropertyName">å±æ€§åç§°</param>
         public SaveFieldsConfigAttribute(string propertyName)
         {
             PropertyName = propertyName;
@@ -21,45 +21,45 @@
 
 
         /// <summary>
-        /// ±£´æForm´°ÌåÖµÀàĞÍÊı¾İÖÁÎÄ¼ş
+        /// ä¿å­˜Formçª—ä½“å€¼ç±»å‹æ•°æ®è‡³æ–‡ä»¶
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="form">´°ÌåÊµÀı</param>
-        /// <param name="fileName">xmlÎÄ¼şÂ·¾¶</param>
+        /// <param name="form">çª—ä½“å®ä¾‹</param>
+        /// <param name="fileName">xmlæ–‡ä»¶è·¯å¾„</param>
         /// <returns></returns>
         public static bool SaveXmlToFile<T>(T form, string fileName) where T : Form
         {
             try
             {
-                BindingFlags filter = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;//¹ıÂËÆ÷
-                Type tp = form.GetType();//»ñÈ¡FormÀàĞÍ
-                var fields = tp.GetFields(filter);//»ñÈ¡¹²ÓÃºÍË½ÓĞ×Ö¶Î
-                XDocument xdoc = new XDocument();//´´½¨xmlÎÄµµ
-                xdoc.Add(new XComment($"´°Ìå½çÃæ({form.Text})µÄ²ÎÊı¼ÇÂ¼"));
+                BindingFlags filter = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;//è¿‡æ»¤å™¨
+                Type tp = form.GetType();//è·å–Formç±»å‹
+                var fields = tp.GetFields(filter);//è·å–å…±ç”¨å’Œç§æœ‰å­—æ®µ
+                XDocument xdoc = new XDocument();//åˆ›å»ºxmlæ–‡æ¡£
+                xdoc.Add(new XComment($"çª—ä½“ç•Œé¢({form.Text})çš„å‚æ•°è®°å½•"));
                 var paramElement = new XElement("UIInputValueList");
-                xdoc.Add(paramElement);//Ìí¼Ó¸¸½Úµã
+                xdoc.Add(paramElement);//æ·»åŠ çˆ¶èŠ‚ç‚¹
                 List<XElement> paramList = new List<XElement>();
                 fields.ToList().ForEach((field) =>
                 {
                     var att = (SaveFieldsConfigAttribute)field.GetCustomAttributes(true).ToList().
-                    Find(p => p.GetType() == typeof(SaveFieldsConfigAttribute));//Ñ°ÕÒSaveFieldsConfigAttribute±ê¼ÇµÄ×Ö¶Î
+                    Find(p => p.GetType() == typeof(SaveFieldsConfigAttribute));//å¯»æ‰¾SaveFieldsConfigAttributeæ ‡è®°çš„å­—æ®µ
                     if (att != null)
                     {
                         XElement element = new XElement("item", new XAttribute("Key", field.Name));
                         object fieldsObj = field.GetValue(form);
                         if (att.PropertyName != null)
                         {
-                            element.Add(fieldsObj.GetType().GetProperty(att.PropertyName).GetValue(fieldsObj));//»ñÈ¡×Ö¶ÎÖµ²¢Ìí¼ÓÖµÉÏÒ»¼¶½Úµã
+                            element.Add(fieldsObj.GetType().GetProperty(att.PropertyName).GetValue(fieldsObj));//è·å–å­—æ®µå€¼å¹¶æ·»åŠ å€¼ä¸Šä¸€çº§èŠ‚ç‚¹
                         }
                         else
                         {
-                            element.Add(field.GetValue(form));//»ñÈ¡×Ö¶ÎÖµ²¢Ìí¼ÓÖµÉÏÒ»¼¶½Úµã
+                            element.Add(field.GetValue(form));//è·å–å­—æ®µå€¼å¹¶æ·»åŠ å€¼ä¸Šä¸€çº§èŠ‚ç‚¹
                         }
-                        paramElement.Add(element);//Ìí¼Ó×Ó½Úµã
+                        paramElement.Add(element);//æ·»åŠ å­èŠ‚ç‚¹
                     }
                 });
-                xdoc.Add(new XComment($"DateTime£º{DateTime.Now.ToString()}"));//Ìí¼Ó±¸×¢
-                xdoc.Save(fileName);//±£´æ
+                xdoc.Add(new XComment($"DateTimeï¼š{DateTime.Now.ToString()}"));//æ·»åŠ å¤‡æ³¨
+                xdoc.Save(fileName);//ä¿å­˜
                 return true;
             }
             catch (Exception ex)
@@ -70,26 +70,26 @@
         }
 
         /// <summary>
-        /// ¶ÁÈ¡Form´°ÌåÖµÀàĞÍÊı¾İ
+        /// è¯»å–Formçª—ä½“å€¼ç±»å‹æ•°æ®
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="form">´°ÌåÊµÀı</param>
-        /// <param name="fileName">xmlÎÄ¼şÂ·¾¶</param>
+        /// <param name="form">çª—ä½“å®ä¾‹</param>
+        /// <param name="fileName">xmlæ–‡ä»¶è·¯å¾„</param>
         /// <returns></returns>
         public static bool LoadXmlFromFile<T>(T form, string fileName) where T : Form
         {
             try
             {
-                BindingFlags filter = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;//¹ıÂËÆ÷
+                BindingFlags filter = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;//è¿‡æ»¤å™¨
                 Type tp = form.GetType();
-                // ¼ÓÔØÓÃ»§ÉÏ´ÎÊäÈëµÄÅäÖÃ
+                // åŠ è½½ç”¨æˆ·ä¸Šæ¬¡è¾“å…¥çš„é…ç½®
                 XDocument xdoc = XDocument.Load(fileName);
-                XElement xRoot = xdoc.Element("UIInputValueList");//»ñÈ¡²ÎÊı¸¸½Úµã
+                XElement xRoot = xdoc.Element("UIInputValueList");//è·å–å‚æ•°çˆ¶èŠ‚ç‚¹
                 foreach (XElement xele in xRoot.Elements())
                 {
-                    var field = tp.GetField(xele.FirstAttribute.Value, filter);//Í¨¹ı±ê¼Ç²éÕÒ×Ö¶Î»òÊôĞÔ
+                    var field = tp.GetField(xele.FirstAttribute.Value, filter);//é€šè¿‡æ ‡è®°æŸ¥æ‰¾å­—æ®µæˆ–å±æ€§
                     if (field == null) continue;
-                    var fieldObj = field.GetValue(form);//Í¨¹ıÊµÀı»ñÈ¡×Ö¶Î»òÊôĞÔ
+                    var fieldObj = field.GetValue(form);//é€šè¿‡å®ä¾‹è·å–å­—æ®µæˆ–å±æ€§
                     var att = (SaveFieldsConfigAttribute)field.GetCustomAttribute(typeof(SaveFieldsConfigAttribute));
                     if (att == null) continue;
 
@@ -124,6 +124,10 @@
                     {
                         val = Convert.ToByte(xele.Value);
                     }
+                    else if (prop == typeof(bool))
+                    {
+                        val = Convert.ToBoolean(xele.Value);
+                    }
                     else
                     {
                         val = xele.Value;
@@ -131,11 +135,11 @@
 
                     if (att.PropertyName != null)
                     {
-                        fieldObj.GetType().GetProperty(att.PropertyName, filter).SetValue(fieldObj, val);//×Ö¶Î»òÊôĞÔÖØĞÂ¸³Öµ
+                        fieldObj.GetType().GetProperty(att.PropertyName, filter).SetValue(fieldObj, val);//å­—æ®µæˆ–å±æ€§é‡æ–°èµ‹å€¼
                     }
                     else
                     {
-                        field.SetValue(form, val);//×Ö¶Î»òÊôĞÔÖØĞÂ¸³Öµ
+                        field.SetValue(form, val);//å­—æ®µæˆ–å±æ€§é‡æ–°èµ‹å€¼
                     }
                 }
                 return true;
