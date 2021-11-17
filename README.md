@@ -26,4 +26,4 @@ For Windows Form Project  Use Visual Studio 2019
         }
         
 Test Demo：
-![image](https://user-images.githubusercontent.com/16300960/140856113-dbafb03f-9dbb-46c4-971e-bde44aa2829b.png)
+![image](https://user-images.githubusercontent.com/16300960/142130390-b4ba1741-412c-460b-8707-a251203c075e.png)
