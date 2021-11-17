@@ -27,52 +27,59 @@ public class SaveFieldsConfigAttribute : Attribute
 
 
     /// <summary>
-    /// 保存Form窗体控件属性值类型数据至文件
+    /// 保存Form窗体值类型数据至文件
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="form">窗体实例</param>
     /// <param name="fileName">xml文件路径</param>
     /// <returns></returns>
-    public static bool SaveXmlToFile<T>(T form, string fileName) where T : Form
+    public static void SaveXmlToFile<T>(T form, string fileName) where T : Form
     {
-        try
+
+        BindingFlags filter = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;//过滤器
+        Type tp = form.GetType();//获取Form类型
+        var fields = tp.GetFields(filter);//获取共用和私有字段
+        XDocument xdoc = new XDocument();//创建xml文档
+        xdoc.Add(new XComment($"窗体界面({form.Text})的参数记录"));
+        var paramElement = new XElement("UIInputValueList");
+        xdoc.Add(paramElement);//添加父节点
+        List<XElement> paramList = new List<XElement>();
+        fields.ToList().ForEach((field) =>
         {
-            BindingFlags filter = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;//过滤器
-            Type tp = form.GetType();//获取Form类型
-            var fields = tp.GetFields(filter);//获取共用和私有字段
-            XDocument xdoc = new XDocument();//创建xml文档
-            xdoc.Add(new XComment($"窗体界面({form.Text})的参数记录"));
-            var paramElement = new XElement("UIInputValueList");
-            xdoc.Add(paramElement);//添加父节点
-            List<XElement> paramList = new List<XElement>();
-            fields.ToList().ForEach((field) =>
+            try
             {
                 var att = (SaveFieldsConfigAttribute)field.GetCustomAttributes(true).ToList().
-                Find(p => p.GetType() == typeof(SaveFieldsConfigAttribute));//寻找SaveFieldsConfigAttribute标记的字段
-                    if (att != null)
+                    Find(p => p.GetType() == typeof(SaveFieldsConfigAttribute));//寻找SaveFieldsConfigAttribute标记的字段
+                if (att != null)
                 {
                     XElement element = new XElement("item", new XAttribute("Key", field.Name));
                     object fieldsObj = field.GetValue(form);
                     if (att.PropertyName != null)
                     {
-                        element.Add(fieldsObj.GetType().GetProperty(att.PropertyName).GetValue(fieldsObj));//获取字段值并添加值上一级节点
+                        var saveVal = fieldsObj.GetType().GetProperty(att.PropertyName).GetValue(fieldsObj);
+                        if (saveVal.GetType().GetInterfaces().Contains(typeof(System.Collections.ICollection)))
+                        {
+                            element.Add(string.Join(",", (saveVal as System.Collections.ICollection).Cast<object>().ToList().Select(p => p.ToString())));
                         }
+                        else
+                        {
+                            element.Add(saveVal);//获取字段值并添加值上一级节点
+                        }
+                    }
                     else
                     {
                         element.Add(field.GetValue(form));//获取字段值并添加值上一级节点
-                        }
-                    paramElement.Add(element);//添加子节点
                     }
-            });
-            xdoc.Add(new XComment($"DateTime：{DateTime.Now.ToString()}"));//添加备注
-            xdoc.Save(fileName);//保存
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            return false;
-        }
+                    paramElement.Add(element);//添加子节点
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("保存配置(Error)：" + form.Name+","+field.Name + "," + ex.Message);
+            }
+        });
+        xdoc.Add(new XComment($"DateTime：{DateTime.Now.ToString()}"));//添加备注
+        xdoc.Save(fileName);//保存
     }
 
     /// <summary>
@@ -82,16 +89,19 @@ public class SaveFieldsConfigAttribute : Attribute
     /// <param name="form">窗体实例</param>
     /// <param name="fileName">xml文件路径</param>
     /// <returns></returns>
-    public static bool LoadXmlFromFile<T>(T form, string fileName) where T : Form
+    public static void LoadXmlFromFile<T>(T form, string fileName) where T : Form
     {
-        try
+
+        BindingFlags filter = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;//过滤器
+        Type tp = form.GetType();
+
+        if (!System.IO.File.Exists(fileName)) return;//如果文件不存在
+        // 加载用户上次输入的配置
+        XDocument xdoc = XDocument.Load(fileName);
+        XElement xRoot = xdoc.Element("UIInputValueList");//获取参数父节点
+        foreach (XElement xele in xRoot.Elements())
         {
-            BindingFlags filter = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;//过滤器
-            Type tp = form.GetType();
-            // 加载用户上次输入的配置
-            XDocument xdoc = XDocument.Load(fileName);
-            XElement xRoot = xdoc.Element("UIInputValueList");//获取参数父节点
-            foreach (XElement xele in xRoot.Elements())
+            try
             {
                 var field = tp.GetField(xele.FirstAttribute.Value, filter);//通过标记查找字段或属性
                 if (field == null) continue;
@@ -134,6 +144,10 @@ public class SaveFieldsConfigAttribute : Attribute
                 {
                     val = Convert.ToBoolean(xele.Value);
                 }
+                else if (prop.GetInterfaces().Contains(typeof(System.Collections.ICollection)))
+                {
+                    val = (System.Collections.ICollection)(xele.Value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList());
+                }
                 else
                 {
                     val = xele.Value;
@@ -141,19 +155,36 @@ public class SaveFieldsConfigAttribute : Attribute
 
                 if (att.PropertyName != null)
                 {
-                    fieldObj.GetType().GetProperty(att.PropertyName, filter).SetValue(fieldObj, val);//字段或属性重新赋值
+                    if (fieldObj.GetType().GetProperty(att.PropertyName, filter).SetMethod != null & !prop.GetInterfaces().Contains(typeof(System.Collections.ICollection)))
+                    {
+                        fieldObj.GetType().GetProperty(att.PropertyName, filter).SetValue(fieldObj, val);//字段或属性重新赋值
+                    }
+                    else
+                    {
+                        if (prop.GetInterfaces().Contains(typeof(System.Collections.ICollection)))
+                        {
+                            var obj = fieldObj.GetType().GetProperty(att.PropertyName, filter).GetValue(fieldObj);
+                            (fieldObj.GetType().GetProperty(att.PropertyName, filter).GetValue(fieldObj) as
+                              System.Collections.IList).GetType().GetMethod("Clear").Invoke(obj, null);//先清空集合
+                            (val as IList<string>).Cast<object>().ToList().ForEach(item =>//使用集合的Add方法添加
+                            {
+                                (fieldObj.GetType().GetProperty(att.PropertyName, filter).GetValue(fieldObj) as
+                                     System.Collections.IList).GetType().GetMethod("Add").Invoke(obj,
+                                    new object[] { item });//再重新添加新的至集合
+                            });
+                        }
+                    }
                 }
                 else
                 {
                     field.SetValue(form, val);//字段或属性重新赋值
                 }
             }
-            return true;
+            catch (Exception ex)
+            {
+                Console.WriteLine("加载配置(Error)：" + form.Name + "," + xele.FirstAttribute.Value + "," + ex.Message);
+            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            return false;
-        }
+
     }
 }
