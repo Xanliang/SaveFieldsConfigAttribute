@@ -10,7 +10,7 @@ For Windows Form Project  Use Visual Studio 2019
         private System.Windows.Forms.NumericUpDown numericUpDown1;
         [SaveFieldsConfig("Checked")]
         private System.Windows.Forms.CheckBox checkBox1;
-        [SaveFieldsConfig("Checked")]
+        [SaveFieldsConfig("Checked","Font")]
         private System.Windows.Forms.RadioButton radioButton1;
         
 (2)  Save and Load XmlFile
@@ -26,4 +26,5 @@ For Windows Form Project  Use Visual Studio 2019
         }
         
 Test Demo：
-![image](https://user-images.githubusercontent.com/16300960/142130390-b4ba1741-412c-460b-8707-a251203c075e.png)
+![image](https://user-images.githubusercontent.com/16300960/142420148-804f87ac-ceb6-4073-83c3-4255e251470c.png)
+
